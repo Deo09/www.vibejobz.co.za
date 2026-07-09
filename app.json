@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "VibeJobz",
+    "slug": "vibejobz",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "vibejobz",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#000000"
+      },
+      "package": "com.vibejobz.app"
+    },
+    "ios": {
+      "bundleIdentifier": "com.vibejobz.app",
+      "supportsTablet": false
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
