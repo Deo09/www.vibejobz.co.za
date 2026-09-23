@@ -1290,5 +1290,77 @@ function apsRenderProgrammes(entries, res){
      ${r.issues.length ? `<ul>${r.issues.map(i=>`<li>${i}</li>`).join("")}</ul>` : `<div class="calc-hint" style="color:var(--green); font-weight:700; margin-top:8px;">✓ You meet the APS and subject requirements.</div>`}</div>`).join("");
 }
 </script>
+<!-- Connect to Supabase CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+  // 1. Initialize Supabase (Using your public URL and public Anon key)
+  const supabaseUrl = 'https://rcnfuxykvnvrzxmfdrdz.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjbmZ1eHlrdm52cnp4bWZkcmR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyMDYwODYsImV4cCI6MjA5Njc4MjA4Nn0.RRJ9DJ2ruiTuL7VzFiwvKwtrrlJF2qlhStF2NpSSqNw'; 
+  const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+  let liveJobs = []; // Stores the data for the WhatsApp button
+
+  // 2. Fetch live data from your database
+  async function fetchClosingSoon() {
+    const listDiv = document.getElementById('urgent-list');
+    listDiv.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-3);">Loading live deadlines...</div>';
+
+    // Pull the latest learnerships
+    const { data: jobs, error } = await supabase
+      .from('jobs')
+      .select('title, url, closing_date')
+      .order('closing_date', { ascending: true })
+      .limit(5);
+
+    if (error) {
+      console.error(error);
+      listDiv.innerHTML = '<div style="text-align:center;padding:20px;color:red;">Failed to load live data.</div>';
+      return;
+    }
+
+    if (!jobs || jobs.length === 0) {
+      listDiv.innerHTML = '<div style="text-align:center;padding:20px;">No urgent deadlines found.</div>';
+      return;
+    }
+
+    liveJobs = jobs; // Save data for WhatsApp sharing
+    listDiv.innerHTML = ''; // Clear loading text
+
+    // 3. Build the live HTML cards
+    jobs.forEach(job => {
+      const card = document.createElement('div');
+      card.style = "background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:left;margin-bottom:12px;";
+      card.innerHTML = `
+        <div style="font-weight:700;font-size:16px;margin-bottom:4px;color:var(--text-1)">${job.title}</div>
+        <div style="font-size:13px;color:#FF6B00;margin-bottom:12px;font-weight:bold;">🚨 Closing: ${job.closing_date}</div>
+        <a href="${job.url}" target="_blank" style="display:inline-block;background:var(--accent);color:#fff;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;">Apply Now</a>
+      `;
+      listDiv.appendChild(card);
+    });
+  }
+
+  // 4. Update the WhatsApp function to use real links
+  window.sendUrgentWhatsAppReminder = function() {
+    if (liveJobs.length === 0) {
+      alert("Please wait for the live deadlines to load.");
+      return;
+    }
+
+    let message = "🚨 *URGENT LEARNERSHIPS CLOSING SOON* 🚨\n\nDon't miss these deadlines! Apply here:\n\n";
+
+    liveJobs.forEach(job => {
+      message += `📌 *${job.title}*\nCloses: ${job.closing_date}\nLink: ${job.url}\n\n`;
+    });
+
+    message += "Find more opportunities on VibeJobz! 🎓";
+
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  // 5. Automatically load the jobs when the app opens
+  window.onload = fetchClosingSoon;
+</script>
 </body>
 </html>
