@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#FF6B00">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="VibeJobz">
+<meta name="description" content="South Africa's 100% Free Job & Matric Opportunity Portal.">
+<title>VibeJobz — South Africa Free Opportunities Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+/* ─── TOKENS & BASE ──────────────────────────────────────── */
+:root {
+  --bg:           #ffffff;
+  --bg-canvas:    #f8fafc;
+  --bg-card:      #ffffff;
+  --border:       #e2e8f0;
+  --text-1:       #0f172a;
+  --text-2:       #475569;
+  --text-3:       #94a3b8;
+  --accent:       #FF6B00;
+  --accent-blue:  #2563eb;
+  --green:        #059669;
+  --greenbg:      #DDF3E9;
+  --shadow-a:     0 2px 10px rgba(0,0,0,0.04);
+  --shadow-e:     0 8px 24px rgba(0,0,0,0.08);
+  --radius:       12px;
+  --toolbar-h:    61px;
+  --head:         'Bricolage Grotesque', system-ui, sans-serif;
+}
+body.dark {
+  --bg:        #090d16;
+  --bg-canvas: #030712;
+  --bg-card:   #111827;
+  --border:    #1f2937;
+  --text-1:    #f8fafc;
+  --text-2:    #94a3b8;
+  --text-3:    #64748b;
+  --greenbg:   rgba(5,150,105,0.15);
+  --shadow-a:  0 2px 12px rgba(0,0,0,0.3);
+  --shadow-e:  0 8px 32px rgba(0,0,0,0.5);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 15px; line-height: 1.55; letter-spacing: -0.01em;
+  background: var(--bg); color: var(--text-1);
+  transition: background 200ms, color 200ms; min-height: 100dvh;
+}
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; font-family: inherit; }
+input, select, textarea { font-family: inherit; }
+h1, h2, h3 { font-family: var(--head); }
+
+/* ─── SPLASH & TOOLBAR ───────────────────────────────────── */
+#splash { position: fixed; inset: 0; z-index: 9999; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 400ms ease; }
+#splash.done { opacity: 0; pointer-events: none; }
+.splash-logo { font-size: 28px; font-weight: 800; font-family: var(--head); display: flex; align-items: center; gap: 4px; }
+.splash-logo span.orange { color: var(--accent); }
+.splash-logo span.za { font-size: 13px; font-weight: 600; color: var(--text-3); margin-left: 4px; font-family: 'Inter', sans-serif;}
+.progress { position: relative; width: 160px; height: 2px; margin-top: 24px; border-radius: 1px; background: rgba(170,170,170,0.35); overflow: hidden; }
+.progress::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(255,107,0,0) 0%, rgba(255,107,0,0.9) 50%, rgba(255,107,0,0.8) 100%); animation: sweep 1.4s cubic-bezier(0.4,0,0.6,1) infinite; }
+@keyframes sweep { 0%{transform:translateX(-100%)} 100%{transform:translateX(200%)} }
+
+.toolbar { position: fixed; top: 0; left: 0; right: 0; height: var(--toolbar-h); display: flex; align-items: center; padding: 0 20px; gap: 16px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.9); backdrop-filter: blur(12px); z-index: 100; }
+body.dark .toolbar { background: rgba(17,24,39,0.9); }
+.toolbar-logo { font-size: 18px; font-weight: 800; font-family: var(--head); display: flex; align-items: center; gap: 2px; flex-shrink: 0; cursor: pointer; }
+.toolbar-logo .orange { color: var(--accent); }
+.toolbar-nav { display: flex; align-items: center; gap: 4px; flex: 1; justify-content: center; }
+.toolbar-nav button { padding: 7px 14px; border-radius: 8px; border: none; font-size: 13px; font-weight: 500; background: transparent; color: var(--text-2); transition: all 120ms; }
+.toolbar-nav button:hover { background: var(--bg-canvas); color: var(--text-1); }
+.toolbar-nav button.active { background: var(--bg-canvas); color: var(--accent); font-weight: 700; }
+.toolbar-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+/* ─── BUTTONS & UTILS ────────────────────────────────────── */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 8px; font-size: 13px; font-weight: 600; border: none; outline: none; transition: transform 80ms ease, box-shadow 120ms ease; }
+.btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-a); }
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: linear-gradient(180deg, #FF7A1A 0%, #E55C00 100%); color: #fff; }
+.btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text-1); }
+.btn-ghost:hover { background: var(--bg-canvas); }
+.btn-green { background: linear-gradient(180deg, #10b981 0%, #059669 100%); color: #fff; }
+.btn-icon { width: 36px; padding: 0; border-radius: 8px; background: transparent; border: 1px solid var(--border); color: var(--text-2); }
+.btn-sm { height: 30px; padding: 0 10px; font-size: 12px; border-radius: 6px; }
+
+.icon { width: 16px; height: 16px; stroke-width: 1.75; flex-shrink: 0; vertical-align: middle; }
+.icon-sm { width: 14px; height: 14px; stroke-width: 2; }
+.action-btn { width: 32px; height: 32px; border-radius: 7px; border: 1px solid var(--border); background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-3); }
+.action-btn:hover { background: var(--bg-canvas); color: var(--text-1); }
+.action-btn.active { background: rgba(255,107,0,0.1); color: var(--accent); border-color: var(--accent); }
+
+/* ─── LAYOUT & CARDS ─────────────────────────────────────── */
+.page { display: none; padding-top: var(--toolbar-h); min-height: 100dvh; }
+.page.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+.container { max-width: 1160px; margin: 0 auto; padding: 0 clamp(16px,4vw,32px); }
+.section { padding: 60px 0; }
+.section-hero { padding: 80px 0 50px; }
+.card { border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-card); padding: 20px; transition: box-shadow 200ms, transform 200ms; }
+.card:hover { box-shadow: var(--shadow-e); }
+
+.resource-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; margin-bottom: 32px; }
+.grid-item-card { display: flex; flex-direction: column; justify-content: space-between; padding: 18px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-card); transition: all 160ms ease; gap: 14px; }
+.grid-item-card:hover { box-shadow: var(--shadow-e); transform: translateY(-2px); border-color: var(--accent); }
+.card-header-flex { display: flex; align-items: flex-start; gap: 12px; }
+.card-icon-box { width: 44px; height: 44px; border-radius: 10px; background: var(--bg-canvas); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.job-card { display: flex; align-items: flex-start; gap: 14px; padding: 18px 20px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); transition: all 160ms; }
+.job-card:hover { box-shadow: var(--shadow-e); transform: translateY(-1px); border-color: var(--accent); }
+.job-logo { width: 44px; height: 44px; border-radius: 10px; background: var(--bg-canvas); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.job-title { font-size: 15px; font-weight: 700; color: var(--text-1); margin-bottom: 2px; }
+.job-company { font-size: 13px; color: var(--text-2); }
+.job-meta { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+
+/* ─── FORMS & BADGES ─────────────────────────────────────── */
+.input, .select { width: 100%; height: 40px; padding: 0 12px; border-radius: 8px; border: 1.5px solid var(--border); font-size: 14px; background: var(--bg-canvas); color: var(--text-1); outline: none; }
+.input:focus, .select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,107,0,0.12); }
+.label { font-size: 12px; font-weight: 600; color: var(--text-2); margin-bottom: 6px; display: block; }
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+.badge-orange { background: rgba(255,107,0,0.12); color: var(--accent); }
+.badge-green  { background: rgba(5,150,105,0.12); color: var(--green); }
+.badge-gray   { background: var(--bg-canvas); color: var(--text-2); border: 1px solid var(--border); }
+.badge-blue   { background: rgba(37,99,235,0.1); color: var(--accent-blue); }
+.divider { border: none; border-top: 1px solid var(--border); margin: 0; }
+.eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+.section-head { font-size: 14px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; color: var(--text-2); padding: 18px 0 12px; display: flex; align-items: center; gap: 8px; }
+.search-row { display: flex; gap: 10px; background: var(--bg-card); border: 1.5px solid var(--border); border-radius: 12px; padding: 6px 6px 6px 16px; box-shadow: var(--shadow-a); align-items: center; }
+.search-row input { flex: 1; border: none; background: transparent; font-size: 14px; color: var(--text-1); outline: none; }
+.province-btn { padding: 12px 16px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--bg-card); font-size: 13px; font-weight: 600; color: var(--text-1); text-align: left; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.province-btn:hover { border-color: var(--accent); color: var(--accent); }
+.cat-chip { padding: 6px 14px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--bg-card); font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; color: var(--text-1); }
+.cat-chip:hover, .cat-chip.active { border-color: var(--accent); background: rgba(255,107,0,0.08); color: var(--accent); }
+
+/* ─── GRIDS & MOBILE NAV ─────────────────────────────────── */
+.grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
+
+.mobile-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: var(--bg-card); border-top: 1px solid var(--border); z-index: 200; padding: 0 8px; padding-bottom: env(safe-area-inset-bottom); }
+.mobile-nav-inner { display: flex; align-items: center; justify-content: space-around; height: 60px; }
+.mobile-nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border: none; background: transparent; color: var(--text-3); font-size: 10px; font-weight: 600; cursor: pointer; flex: 1; }
+.mobile-nav-btn.active { color: var(--accent); }
+.mobile-nav-btn .mnav-icon { width: 20px; height: 20px; }
+
+/* ─── MODALS & TOAST ─────────────────────────────────────── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 500; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--bg-card); border-radius: 16px; padding: 26px; max-width: 520px; width: 100%; max-height: 90dvh; overflow-y: auto; box-shadow: var(--shadow-e); border: 1px solid var(--border); position: relative; }
+.modal-close { position: absolute; top: 16px; right: 16px; width: 28px; height: 28px; border-radius: 6px; border: none; background: var(--bg-canvas); color: var(--text-2); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+#toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--text-1); color: var(--bg); padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; opacity: 0; transition: all 300ms ease; z-index: 9000; white-space: nowrap; box-shadow: var(--shadow-e); pointer-events: none; }
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ─── KOTA TRACKER ───────────────────────────────────────── */
+.badge-tracker { font-size: 13px; font-weight: 800; }
+.track-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--bg-canvas); border-radius: 10px; border: 1.5px solid var(--border); margin-bottom: 12px; }
+.track-icon { font-size: 20px; width: 40px; text-align: center; color: var(--text-2); }
+.track-control { display: flex; align-items: center; gap: 10px; }
+.kota-visual-box { width: 100%; height: 220px; background: var(--bg-canvas); border-radius: 12px; border: 2px solid var(--border); margin-bottom: 24px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; border-top: 4px solid var(--accent); }
+.kota-layer { position: absolute; bottom: 15px; width: auto; height: auto; transition: transform 300ms ease, opacity 300ms ease; opacity: 0; transform: translateY(20px); z-index: 10; font-size: 110px; }
+.kota-layer.active { opacity: 1; transform: translateY(0); }
+.k-bread   { z-index: 10; font-size: 110px; }
+.k-chips   { z-index: 15; font-size: 90px; bottom: 30px; }
+.k-atchar  { z-index: 16; font-size: 50px; bottom: 45px; transform: translateX(20px) translateY(20px); }
+.k-polony  { z-index: 18; font-size: 95px; bottom: 60px; }
+.k-cheese  { z-index: 19; font-size: 90px; bottom: 75px; }
+.k-egg     { z-index: 20; font-size: 80px; bottom: 100px; transform: translateX(-15px) translateY(20px); }
+
+/* ─── ADVANCED APS CALCULATOR ────────────────────────────── */
+.calc-layout { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr); margin-top: 16px; }
+@media(min-width: 900px) { .calc-layout { grid-template-columns: minmax(0, 430px) minmax(0, 1fr); align-items: start; } }
+.calc-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 18px; margin-bottom: 16px; }
+.calc-panel h2 { font-size: 1.25rem; margin-bottom: 12px; font-weight: 800; }
+.calc-panel h3 { font-size: 1rem; margin: 16px 0 8px; font-weight: 700; }
+.calc-lbl { display: block; font-weight: 600; font-size: .9rem; margin-bottom: 4px; }
+.calc-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 14px; }
+.calc-seg button { font: inherit; font-weight: 600; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-canvas); color: var(--text-1); cursor: pointer; min-height: 44px; }
+.calc-seg button[aria-pressed="true"] { background: var(--text-1); color: var(--bg-canvas); border-color: var(--text-1); }
+.calc-row { margin-bottom: 14px; }
+.calc-pair { display: flex; gap: 8px; }
+.calc-pair select, .calc-pair .calc-fixed { flex: 1; min-width: 0; }
+.calc-pair input { width: 84px; flex-shrink: 0; }
+.calc-fixed { display: flex; align-items: center; padding: 10px; border: 1px dashed var(--border); border-radius: 8px; color: var(--text-2); min-height: 44px; font-size: .95rem; }
+.calc-err { color: var(--red); font-size: .82rem; display: block; margin-top: 3px; }
+.calc-hint { color: var(--text-2); font-size: .83rem; margin-top: 3px; line-height: 1.4; }
+.calc-score { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin: 8px 0 4px; }
+.calc-score .num { font: 800 clamp(3.5rem, 10vw, 5.5rem)/0.9 var(--head); letter-spacing: -0.04em; color: var(--accent); }
+.calc-score .of { color: var(--text-2); padding-bottom: 8px; }
+.calc-subjrow { display: grid; grid-template-columns: minmax(0, 1.4fr) auto auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.calc-subjrow .nm { font-weight: 600; font-size: .92rem; min-width: 0; overflow-wrap: anywhere; }
+.calc-subjrow .nm small { display: block; font-weight: 400; color: var(--text-2); font-size: .78rem; }
+.calc-pips { display: flex; gap: 3px; }
+.calc-pips i { width: 12px; height: 18px; border-radius: 2px; background: var(--border); display: block; }
+.calc-pips i.on { background: var(--accent); }
+.calc-pips.dim i.on { background: var(--text-3); }
+.calc-pts { font: 700 1.1rem var(--head); width: 2.2rem; text-align: right; }
+table.calc-m { width: 100%; border-collapse: collapse; font-size: .92rem; }
+table.calc-m td { padding: 7px 0; border-bottom: 1px solid var(--border); }
+table.calc-m td:last-child { text-align: right; font-weight: 600; }
+table.calc-m tr.sel td { font-weight: 700; color: var(--accent); }
+.calc-prog { border: 1px solid var(--border); border-left-width: 6px; border-radius: 8px; padding: 12px; margin-bottom: 10px; background: var(--bg-card); }
+.calc-prog.yes { border-left-color: var(--green); }
+.calc-prog.close { border-left-color: #F0B34A; }
+.calc-prog.no { border-left-color: var(--red); }
+.calc-prog .hd { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: baseline; }
+.calc-prog h3 { margin: 0; font-size: 1.02rem; }
+.calc-meta { color: var(--text-2); font-size: .85rem; margin: 2px 0 4px; }
+.calc-prog ul { margin: 6px 0 0; padding-left: 18px; font-size: .88rem; color: var(--text-1); }
+
+@media (max-width: 840px) {
+  .toolbar-nav { display: none; }
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr !important; }
+  .mobile-nav { display: block; }
+  .page { padding-bottom: 74px; }
+  #toast { bottom: 80px; }
+}
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="splash-logo"><span>Vibe</span><span class="orange">Jobz</span><span class="za">ZA</span></div>
+  <div class="progress"></div>
+</div>
+
+<div id="toast"></div>
+
+<nav class="mobile-nav">
+  <div class="mobile-nav-inner">
+    <button class="mobile-nav-btn active" id="mnav-home" onclick="nav('home')">
+      <i data-lucide="home" class="mnav-icon"></i> Home
+    </button>
+    <button class="mobile-nav-btn" id="mnav-jobs" onclick="nav('jobs')">
+      <i data-lucide="briefcase" class="mnav-icon"></i> Jobs
+    </button>
+    <button class="mobile-nav-btn" id="mnav-courses" onclick="nav('courses')">
+      <i data-lucide="book-open" class="mnav-icon"></i> Courses
+    </button>
+    <button class="mobile-nav-btn" id="mnav-aftermatric" onclick="nav('aftermatric')">
+      <i data-lucide="graduation-cap" class="mnav-icon"></i> Matric
+    </button>
+    <button class="mobile-nav-btn" id="mnav-tracker" onclick="nav('tracker')">
+      <i data-lucide="bell" class="mnav-icon"></i> Urgent
+    </button>
+  </div>
+</nav>
+
+<header class="toolbar">
+  <div class="toolbar-logo" onclick="nav('home')">
+    <span>Vibe</span><span class="orange">Jobz</span><span class="za">ZA</span>
+  </div>
+  <nav class="toolbar-nav">
+    <button class="active" onclick="nav('home')">Home</button>
+    <button onclick="nav('jobs')">Jobs</button>
+    <button onclick="nav('courses')">Courses</button>
+    <button onclick="nav('aftermatric')">After Matric</button>
+    <button onclick="nav('tracker')">Closing Soon 🚨</button>
+  </nav>
+  <div class="toolbar-actions">
+    <span class="badge badge-green" style="font-size:11px">100% Free</span>
+    <button class="btn btn-icon" onclick="toggleDark()" aria-label="Toggle dark mode">
+      <i data-lucide="moon" class="icon"></i>
+    </button>
+  </div>
+</header>
+
+<div class="page active" id="page-home">
+  <section class="section-hero">
+    <div class="container" style="text-align:center">
+      <div class="eyebrow">🇿🇦 100% Free Youth & Opportunities Portal</div>
+      <h1 style="font-size:clamp(32px,5vw,56px);font-weight:800;letter-spacing:-0.04em;line-height:1.1;margin-bottom:16px">
+        Find Jobs, Bursaries & <br><span style="color:var(--accent)">Matric Opportunities</span>
+      </h1>
+      <p style="font-size:16px;color:var(--text-2);max-width:580px;margin:0 auto 28px">
+        Free verified job vacancies, study abroad bursaries, matric study materials, and instant university qualification checks.
+      </p>
+      
+      <div class="search-row" style="max-width:540px;margin:0 auto 36px">
+        <i data-lucide="search" class="icon" style="color:var(--text-3)"></i>
+        <input type="text" placeholder="Search job title, company or keyword…" id="hero-search">
+        <button class="btn btn-primary" onclick="doSearch()">Search Jobs</button>
+      </div>
+
+      <div class="grid-4" style="max-width:640px;margin:0 auto">
+        <div class="card" style="text-align:center;padding:16px">
+          <div style="font-size:28px;font-weight:800;color:var(--accent)" id="stat-jobs">Live</div>
+          <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase">Fresh Jobs</div>
+        </div>
+        <div class="card" style="text-align:center;padding:16px">
+          <div style="font-size:28px;font-weight:800;color:var(--green)">R0</div>
+          <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase">Free Forever</div>
+        </div>
+        <div class="card" style="text-align:center;padding:16px">
+          <div style="font-size:28px;font-weight:800;color:var(--accent-blue)">9</div>
+          <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase">Provinces</div>
+        </div>
+        <div class="card" style="text-align:center;padding:16px">
+          <div style="font-size:28px;font-weight:800;color:#9333ea">APS</div>
+          <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase">Calculator</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <section class="section">
+    <div class="container">
+      <div class="eyebrow">Browse by Province</div>
+      <h2 style="font-size:26px;font-weight:800;letter-spacing:-0.03em;margin-bottom:8px">Jobs across South Africa</h2>
+      <p style="color:var(--text-2);margin-bottom:24px">Filter vacancies instantly by province.</p>
+      <div class="grid-3">
+        <button class="province-btn" onclick="filterProvince('Gauteng')"><i data-lucide="map-pin" class="icon-sm" style="color:var(--accent)"></i>Gauteng</button>
+        <button class="province-btn" onclick="filterProvince('KwaZulu-Natal')"><i data-lucide="map-pin" class="icon-sm" style="color:var(--accent)"></i>KwaZulu-Natal</button>
+        <button class="province-btn" onclick="filterProvince('Western Cape')"><i data-lucide="map-pin" class="icon-sm" style="color:var(--accent)"></i>Western Cape</button>
+        <button class="province-btn" onclick="filterProvince('Limpopo')"><i data-lucide="map-pin" class="icon-sm" style="color:var(--accent)"></i>Limpopo</button>
+        <button class="province-btn" onclick="filterProvince('Mpumalanga')"><i data-lucide="map-pin" class="icon-sm" style="color:var(--accent)"></i>Mpumalanga</button>
+        <button class="province-btn" onclick="filterProvince('North West')"><i data-lucide="map-pin" class="icon-sm" style="color:var(--accent)"></i>North West</button>
+        <button class="province-btn" onclick="filterProvince('Free State')"><i data-lucide="map-pin" class="icon-sm" style="color:var(--accent)"></i>Free State</button>
+        <button class="province-btn" onclick="filterProvince('Eastern Cape')"><i data-lucide="map-pin" class="icon-sm" style="color:var(--accent)"></i>Eastern Cape</button>
+        <button class="province-btn" onclick="filterProvince('Northern Cape')"><i data-lucide="map-pin" class="icon-sm" style="color:var(--accent)"></i>Northern Cape</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="page" id="page-jobs">
+  <div class="container" style="padding-top:28px;padding-bottom:40px">
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap">
+      <div>
+        <h1 style="font-size:24px;font-weight:800;letter-spacing:-0.03em">Job Listings</h1>
+        <p style="font-size:13px;color:var(--text-2)">100% Free application portal for verified SA vacancies.</p>
+      </div>
+      <span id="jobs-source-badge" class="badge badge-green" style="margin-left:auto">✓ Live Jobs</span>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <div class="search-row" style="flex:1;min-width:220px">
+        <i data-lucide="search" class="icon" style="color:var(--text-3);flex-shrink:0"></i>
+        <input type="text" placeholder="Search job title, company..." id="job-search" oninput="filterJobs()">
+      </div>
+      <select class="select" style="width:170px" id="province-filter" onchange="filterJobs()">
+        <option value="">All Provinces</option>
+        <option>Gauteng</option><option>KwaZulu-Natal</option><option>Western Cape</option>
+        <option>Limpopo</option><option>Mpumalanga</option><option>North West</option>
+        <option>Free State</option><option>Eastern Cape</option><option>Northern Cape</option>
+      </select>
+      <select class="select" style="width:150px" id="type-filter" onchange="filterJobs()">
+        <option value="">All Types</option>
+        <option>Full-time</option><option>Part-time</option><option>Contract</option><option>Remote</option><option>Learnership</option>
+      </select>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px">
+      <button class="cat-chip active" onclick="setCat(this,'all')">All</button>
+      <button class="cat-chip" onclick="setCat(this,'tech')">Tech</button>
+      <button class="cat-chip" onclick="setCat(this,'finance')">Finance</button>
+      <button class="cat-chip" onclick="setCat(this,'retail')">Retail</button>
+      <button class="cat-chip" onclick="setCat(this,'admin')">Admin</button>
+      <button class="cat-chip" onclick="setCat(this,'healthcare')">Healthcare</button>
+      <button class="cat-chip" onclick="setCat(this,'construction')">Construction</button>
+    </div>
+
+    <div id="job-list" style="display:flex;flex-direction:column;gap:10px"></div>
+
+    <div style="text-align:center;margin-top:28px">
+      <button id="load-more-btn" class="btn btn-ghost btn-sm" onclick="loadMoreJobs()" style="display:none">
+        <i data-lucide="chevron-down" class="icon"></i> Load more jobs
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="page" id="page-courses">
+  <div class="container" style="padding-top:24px;padding-bottom:60px">
+    <div style="margin-bottom:20px">
+      <h1 style="font-size:24px;font-weight:800;letter-spacing:-0.03em;margin-bottom:4px">Free Courses & Certifications</h1>
+      <p style="color:var(--text-2);font-size:13px">Accredited digital certificates, IT, finance and leadership courses.</p>
+    </div>
+
+    <div class="search-row" style="margin-bottom:20px">
+      <i data-lucide="search" class="icon" style="color:var(--text-3);flex-shrink:0"></i>
+      <input type="text" placeholder="Search courses, skills, providers..." id="course-search-input" oninput="filterCourseCards(this.value)">
+    </div>
+
+    <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:12px;margin-bottom:20px">
+      <button class="cat-chip active" onclick="setCourseFilter(this,'all')">All</button>
+      <button class="cat-chip" onclick="setCourseFilter(this,'SA Government')">🇿🇦 SA Gov</button>
+      <button class="cat-chip" onclick="setCourseFilter(this,'Microsoft Office')">💼 Microsoft</button>
+      <button class="cat-chip" onclick="setCourseFilter(this,'AI & Data')">🤖 AI & Data</button>
+      <button class="cat-chip" onclick="setCourseFilter(this,'Coding')">💻 Coding</button>
+      <button class="cat-chip" onclick="setCourseFilter(this,'Digital Skills')">📱 Digital Skills</button>
+    </div>
+
+    <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+      <span id="course-count-badge" class="badge badge-green" style="font-size:12px">Loading verified courses...</span>
+      <span class="badge badge-gray" style="font-size:12px">✓ Verified links</span>
+      <span class="badge badge-orange" style="font-size:12px">🆓 100% Free</span>
+    </div>
+
+    <div class="resource-grid" id="courses-grid">
+      <div style="text-align:center;padding:40px;color:var(--text-3);grid-column:1/-1">
+        Loading courses from Supabase...
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page" id="page-aftermatric">
+  <div class="container" style="padding-top:24px;padding-bottom:60px">
+    <div style="margin-bottom:20px">
+      <h1 style="font-size:24px;font-weight:800;letter-spacing:-0.03em;margin-bottom:4px">After Matric Hub</h1>
+      <p style="color:var(--text-2);font-size:13px">APS Calculator, study abroad scholarships, university portals & study materials.</p>
+    </div>
+
+    <div class="card" style="margin-bottom:30px; border:1.5px solid var(--accent); background:linear-gradient(135deg, rgba(255,107,0,0.02) 0%, rgba(37,99,235,0.02) 100%);">
+      <div style="margin-bottom:16px;">
+        <h2 style="font-size:20px; font-weight:800; margin-bottom:4px; display:flex; align-items:center; gap:8px;">
+          <i data-lucide="calculator" class="icon" style="color:var(--accent)"></i> Advanced APS Calculator
+        </h2>
+        <p class="calc-hint">Calculate your score, see how universities count it, and find out what degrees you qualify for.</p>
+      </div>
+
+      <div class="calc-layout">
+        <div>
+          <section class="calc-panel">
+            <div class="calc-lbl" id="lbl-stream">Matric Stream</div>
+            <div class="calc-seg" role="group" aria-labelledby="lbl-stream">
+              <button type="button" data-stream="academic" aria-pressed="true">Academic (NSC)</button>
+              <button type="button" data-stream="technical" aria-pressed="false">Technical</button>
+            </div>
+
+            <div class="calc-row">
+              <label class="calc-lbl" for="markType">Which marks are these?</label>
+              <select id="markType" class="input">
+                <option value="g11">Grade 11 final marks</option>
+                <option value="g12p">Grade 12 preliminary marks</option>
+                <option value="g12f" selected>Grade 12 final marks</option>
+              </select>
+            </div>
+
+            <div id="calc-inputs"></div>
+
+            <div style="margin-top:16px;">
+              <button type="button" class="btn btn-ghost" style="width:100%; margin-bottom:8px;" id="calc-reset">Clear all marks</button>
+              <p class="calc-hint" style="text-align:center;">Marks are saved locally on your phone. No data is sent to external servers.</p>
+            </div>
+          </section>
+        </div>
+
+        <div>
+          <section class="calc-panel" aria-live="polite">
+            <div id="calc-notice"></div>
+            
+            <div class="calc-row">
+              <label class="calc-lbl" for="method">Counting Method (Institution Rules)</label>
+              <select id="method" class="input"></select>
+            </div>
+            
+            <div class="calc-score">
+              <span class="num" id="calc-total">0</span>
+              <span class="of" id="calc-of">of 42 points</span>
+            </div>
+            <div id="calc-mark-note" class="calc-hint"></div>
+
+            <h3 style="margin-top:24px;">Points per subject</h3>
+            <div id="calc-subjects"></div>
+
+            <h3 style="margin-top:24px;">Total under each method</h3>
+            <table class="calc-m" id="calc-methods"></table>
+          </section>
+
+          <section class="calc-panel">
+            <h2>What if my mark changes?</h2>
+            <p class="calc-hint" style="margin-bottom:12px;">See how rewriting or upgrading one subject impacts your final score.</p>
+            <div style="display:grid; gap:12px; grid-template-columns:1fr 1fr;">
+              <div>
+                <label class="calc-lbl" for="wiSlot">Subject</label>
+                <select id="wiSlot" class="input"></select>
+              </div>
+              <div>
+                <label class="calc-lbl" for="wiDelta">Change: <output id="wiVal" style="font-weight:700;">0%</output></label>
+                <input type="range" id="wiDelta" min="-20" max="20" step="1" value="0" style="width:100%; accent-color:var(--accent);">
+              </div>
+            </div>
+            <div style="margin-top:12px; padding:10px 12px; border-radius:8px; background:var(--bg-canvas); border:1px solid var(--border); font-size:.92rem;" id="wiOut">
+              Move the slider to see the effect.
+            </div>
+          </section>
+
+          <section class="calc-panel">
+            <h2>Programme Eligibility</h2>
+            <div class="calc-row">
+              <label class="calc-lbl" for="filter">Show</label>
+              <select id="filter" class="input">
+                <option value="all">All programmes</option>
+                <option value="Degree">Degrees</option>
+                <option value="Diploma">Diplomas</option>
+                <option value="Higher Certificate">Higher certificates</option>
+              </select>
+            </div>
+            <div id="calc-programmes"></div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-head">🌍 Study Abroad — Fully Funded Scholarships</div>
+    <p style="font-size:13px;color:var(--text-2);margin-bottom:14px">Covers tuition, flights, accommodation and living allowances for SA matriculants and graduates.</p>
+    <div class="resource-grid" id="grid-study-abroad">
+      <div style="padding:20px;color:var(--text-3);font-size:13px;grid-column:1/-1;">Loading resources from Supabase...</div>
+    </div>
+
+    <div class="section-head">📚 Matric Exam Prep, Past Papers & Study Guides</div>
+    <div class="resource-grid" id="grid-study-material">
+      <div style="padding:20px;color:var(--text-3);font-size:13px;grid-column:1/-1;">Loading resources from Supabase...</div>
+    </div>
+
+    <div class="section-head">🏛️ South African University Portals</div>
+    <div class="resource-grid" id="grid-university">
+      <div style="padding:20px;color:var(--text-3);font-size:13px;grid-column:1/-1;">Loading resources from Supabase...</div>
+    </div>
+
+    <div class="section-head">🎓 Local Bursaries & Funding</div>
+    <div class="resource-grid" id="grid-bursary">
+      <div style="padding:20px;color:var(--text-3);font-size:13px;grid-column:1/-1;">Loading resources from Supabase...</div>
+    </div>
+  </div>
+</div>
+
+<div class="page" id="page-tracker">
+  <div class="container" style="padding-top:24px;padding-bottom:60px;max-width:680px">
+    
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-top:4px solid var(--accent);border-radius:16px;padding:24px 20px;text-align:center;margin-bottom:20px;">
+      <div style="font-size:42px;margin-bottom:8px">⏰</div>
+      <h2 style="margin:0 0 6px 0;font-size:20px;font-weight:700;color:var(--text-1)">Closing Soon Watchlist</h2>
+      <p style="margin:0;font-size:14px;color:var(--text-2)">Learnerships, bursaries, and internships closing within the next 48 hours.</p>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px">
+      <button class="cat-chip active" onclick="setUrgentFilter(this, 'all')">All</button>
+      <button class="cat-chip" onclick="setUrgentFilter(this, 'learnership')">Learnerships</button>
+      <button class="cat-chip" onclick="setUrgentFilter(this, 'bursary')">Bursaries</button>
+      <button class="cat-chip" onclick="setUrgentFilter(this, 'internship')">Internships</button>
+    </div>
+
+    <div id="urgent-list" style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px">
+      <div style="text-align:center;padding:40px;color:var(--text-3);">Checking live deadlines...</div>
+    </div>
+
+    <div style="border:1px solid #FED7AA;background:rgba(255,107,0,0.04);border-radius:16px;padding:20px;text-align:center;">
+      <p style="margin:0 0 14px 0;font-style:italic;color:var(--accent);font-weight:600;font-size:14px">
+        "Don't lose out on a stipend because of a missed deadline. Send these alerts to your WhatsApp!"
+      </p>
+      <button onclick="sendUrgentWhatsAppReminder()" class="btn btn-green" style="width:100%;height:48px;font-size:15px;box-shadow:var(--shadow-a);">
+        <i data-lucide="message-circle" class="icon-sm" style="margin-right:6px"></i> Send Urgent Deadlines to WhatsApp
+      </button>
+      <button onclick="fetchClosingSoon()" style="background:none;border:none;color:var(--text-3);font-size:13px;margin-top:12px;cursor:pointer">
+        Refresh Live Deadlines ↻
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<div class="modal-overlay" id="job-modal" onclick="closeModalOutside(event,'job-modal')">
+  <div class="modal" id="job-modal-content"></div>
+</div>
+
+<div class="modal-overlay" id="skill-modal" onclick="closeModalOutside(event,'skill-modal')">
+  <div class="modal" style="max-width:320px">
+    <button class="modal-close" onclick="closeModal('skill-modal')"><i data-lucide="x" class="icon-sm"></i></button>
+    <div style="font-size:16px; font-weight:800; margin-bottom:12px; font-family:var(--head);">Add New Skill</div>
+    <input type="text" class="input" placeholder="e.g. GA4 Analytics" id="skill-name-input" style="margin-bottom:12px">
+    <button class="btn btn-primary" style="width:100%" onclick="addSkill()">Add to my Briefcase</button>
+  </div>
+</div>
+
+<script>
+// ── BOOTSTRAP INIT & CRASH PREVENTION ──
+window.addEventListener('DOMContentLoaded', () => {
+  // 1. CLEAR SPLASH SCREEN IMMEDIATELY TO PREVENT HANGING
+  const splash = document.getElementById('splash');
+  if (splash) setTimeout(() => splash.classList.add('done'), 100);
+
+  // 2. SAFE ICON INIT
+  if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+  }
+
+  // 3. SAFE DEMO DATA INIT
+  try { DEMO_JOBS.forEach(j => savedJobsMap.set(String(j.id), j)); } catch(e) {}
+  
+  // 4. DATA FETCHING
+  try { fetchJobs(1, false); } catch(e) {}
+  try { fetchCourses(); } catch(e) {}
+  try { fetchMatricResources(); } catch(e) {}
+  
+  // 5. URGENT TRACKER INIT
+  if(document.getElementById('page-tracker')) {
+    fetchClosingSoon();
+  }
+  
+  // 6. SAFE CALCULATOR INIT
+  if(document.querySelector("#calc-inputs")){
+    document.querySelectorAll("[data-stream]").forEach(x=>x.setAttribute("aria-pressed", x.dataset.stream===apsState.stream));
+    document.querySelector("#method").innerHTML = Object.keys(APS_METHODS).map(k=>`<option value="${k}">${APS_METHODS[k].name}</option>`).join("");
+    document.querySelector("#method").value = apsState.method;
+    document.querySelector("#method").addEventListener("change", e=>{apsState.method=e.target.value; apsUpdateAndRender()});
+    document.querySelector("#markType").value = apsState.markType;
+    document.querySelector("#markType").addEventListener("change", e=>{apsState.markType=e.target.value; apsUpdateAndRender()});
+    document.querySelector("#wiSlot").addEventListener("change", e=>{apsState.wiSlot=e.target.value; apsUpdateAndRender()});
+    document.querySelector("#wiDelta").addEventListener("input", e=>{apsState.delta=Number(e.target.value); apsUpdateAndRender()});
+    document.querySelector("#filter").addEventListener("change", e=>{apsState.filter=e.target.value; apsUpdateAndRender()});
+    document.querySelector("#calc-reset").addEventListener("click", () => {
+      Object.keys(apsState.marks).forEach(k=>apsState.marks[k]="");
+      Object.keys(apsState.subj).forEach(k=>apsState.subj[k]="");
+      apsState.delta=0; document.querySelector("#wiDelta").value=0;
+      apsBuildInputs(); apsUpdateAndRender();
+    });
+
+    document.addEventListener("click", e => {
+      const b = e.target.closest("[data-stream]");
+      if(b){
+        apsState.stream = b.dataset.stream;
+        document.querySelectorAll("[data-stream]").forEach(x=>x.setAttribute("aria-pressed", x===b));
+        apsBuildInputs(); document.querySelector("#wiSlot").dataset.sig=""; apsUpdateAndRender();
+      }
+    });
+    document.addEventListener("input", e => {
+      if(e.target.classList.contains("calc-mark")){
+        const slot = e.target.dataset.slot;
+        apsState.marks[slot] = e.target.value;
+        const v = e.target.value, bad = v!=="" && (!Number.isFinite(Number(v))||Number(v)<0||Number(v)>100);
+        document.querySelector("#e-"+slot).hidden = !bad;
+        apsUpdateAndRender();
+      }
+    });
+    document.addEventListener("change", e => {
+      if(e.target.classList.contains("calc-subj")){
+        const slot = e.target.dataset.slot;
+        if(slot==="MAT") apsState.math = e.target.value; else apsState.subj[slot] = e.target.value;
+        apsRefreshElectives(); apsUpdateAndRender();
+      }
+    });
+
+    apsBuildInputs();
+    apsUpdateAndRender();
+  }
+});
+
+// ── Supabase Init ──
+const SUPABASE_URL  = 'https://rcnfuxykvnvrzxmfdrdz.supabase.co'
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjbmZ1eHlrdm52cnp4bWZkcmR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyMDYwODYsImV4cCI6MjA5Njc4MjA4Nn0.RRJ9DJ2ruiTuL7VzFiwvKwtrrlJF2qlhStF2NpSSqNw'
+
+const { createClient } = supabase
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON)
+
+// ── Dark Mode ──
+const savedDark = localStorage.getItem('jv-dark')
+if (savedDark === 'true' || (!savedDark && matchMedia('(prefers-color-scheme: dark)').matches)) document.body.classList.add('dark')
+function toggleDark() {
+  const isDark = document.body.classList.toggle('dark')
+  localStorage.setItem('jv-dark', isDark)
+  if (typeof lucide !== 'undefined') lucide.createIcons()
+}
+
+// ── Navigation ──
+function nav(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
+  const p = document.getElementById('page-' + page)
+  if (p) p.classList.add('active')
+
+  document.querySelectorAll('.toolbar-nav button').forEach(b => b.classList.remove('active'))
+  const map = { home:0, jobs:1, courses:2, aftermatric:3, tracker:4 }
+  const btns = document.querySelectorAll('.toolbar-nav button')
+  if (btns[map[page]]) btns[map[page]].classList.add('active')
+
+  document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'))
+  const mbtn = document.getElementById('mnav-' + page)
+  if (mbtn) mbtn.classList.add('active')
+
+  window.scrollTo(0,0)
+  if (typeof lucide !== 'undefined') lucide.createIcons()
+  
+  if (page === 'jobs' && currentJobs.length === 0) fetchJobs(1, false)
+  if (page === 'courses' && allCourses.length === 0) fetchCourses()
+  if (page === 'tracker') fetchClosingSoon()
+}
+
+// ── Toast & Modals ──
+function showToast(msg) {
+  const t = document.getElementById('toast')
+  t.textContent = msg; t.classList.add('show')
+  setTimeout(() => t.classList.remove('show'), 2500)
+}
+function openModal(id) { document.getElementById(id).classList.add('open') }
+function closeModal(id) { document.getElementById(id).classList.remove('open') }
+function closeModalOutside(e, id) { if (e.target.id === id) closeModal(id) }
+
+// ── Helpers ──
+function escapeHtml(str) {
+  return String(str || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c])
+}
+
+function shareDirect(title, url) {
+  const text = `🇿🇦 *${title}*\n\nI found this opportunity on VibeJobz! 🚀\nIt is a 100% free portal for SA jobs, bursaries, and matric resources.\n\n🌐 *Explore more opportunities here:*\nhttps://www.vibejobz.co.za\n\n🔗 *Direct Application Link:*\n${url}`;
+  window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+}
+
+// ── Jobs Fetching (LocalStorage Saves) ──
+const DEMO_JOBS = [
+  { id:'1', emoji:'💼', title:'Junior Software Developer', company:'Discovery Health', province:'Gauteng', job_type:'Full-time', salary:'R28,000 - R38,000', category:'tech', remote:true, description:'Junior developer to join the digital applications team.', url:'https://www.discovery.co.za/' },
+  { id:'2', emoji:'📊', title:'Finance & Admin Assistant', company:'Standard Bank', province:'Western Cape', job_type:'Full-time', salary:'R16,000 - R22,000', category:'finance', remote:false, description:'Assisting with monthly accounts, reconciliation and reporting.', url:'https://careers.standardbank.co.za' }
+]
+
+// SAFE LOCAL STORAGE INIT FOR JOBS
+let savedJobIds = new Set();
+try {
+  const parsedJobs = JSON.parse(localStorage.getItem('vj_saved_jobs') || '[]');
+  if(Array.isArray(parsedJobs)) savedJobIds = new Set(parsedJobs);
+} catch(e) {}
+
+let savedJobsMap = new Map()
+let currentCat = 'all'
+let currentJobs = []
+let jobsPage = 1
+let jobsHasMore = true
+
+async function fetchJobs(page = 1, append = false) {
+  const listEl = document.getElementById('job-list')
+  if (!append) listEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-3)">Loading fresh jobs…</div>'
+
+  try {
+    const q = document.getElementById('job-search')?.value?.trim() || ''
+    const prov = document.getElementById('province-filter')?.value || ''
+    const type = document.getElementById('type-filter')?.value || ''
+    const cat = currentCat === 'all' ? '' : currentCat
+    const limit = 15
+    const from = (page - 1) * limit
+    const to = from + limit - 1
+
+    let query = sb.from('jobs').select('*', { count: 'exact' }).range(from, to).order('created_at', { ascending: false })
+    if (q) query = query.or(`title.ilike.%${q}%,company.ilike.%${q}%,description.ilike.%${q}%`)
+    if (prov) query = query.eq('province', prov)
+    if (type) query = query.eq('job_type', type)
+    if (cat) query = query.eq('category', cat)
+
+    const { data, error, count } = await query
+    if (error || !data || data.length === 0) throw new Error("Fallback")
+
+    jobsHasMore = page < Math.ceil((count || 0) / limit)
+    jobsPage = page
+    const formatted = data.map(normaliseJob)
+    currentJobs = append ? currentJobs.concat(formatted) : formatted
+    currentJobs.forEach(j => savedJobsMap.set(String(j.id), j))
+    renderJobs(currentJobs)
+    document.getElementById('stat-jobs').textContent = count || currentJobs.length
+  } catch (e) {
+    jobsHasMore = false
+    currentJobs = DEMO_JOBS
+    currentJobs.forEach(j => savedJobsMap.set(String(j.id), j))
+    renderJobs(currentJobs)
+    document.getElementById('stat-jobs').textContent = '50+'
+  }
+}
+
+function normaliseJob(j) {
+  return { id: String(j.id), emoji: j.emoji || '💼', title: j.title || 'Job Opening', company: j.company || 'Verified Employer', province: j.province || 'South Africa', job_type: j.job_type || 'Full-time', salary: j.salary || (j.salary_min ? `R${j.salary_min.toLocaleString()} - R${j.salary_max.toLocaleString()}` : 'Market Related'), remote: !!j.remote, description: j.description || 'Full job details available on direct application.', url: j.url || j.apply_url || '#' }
+}
+
+function renderJobs(jobs) {
+  const list = document.getElementById('job-list')
+  if (!jobs.length) { list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-3)">No jobs found matching your criteria.</div>'; return }
+  list.innerHTML = jobs.map(j => `
+    <div class="job-card">
+      <div class="job-logo" style="cursor:pointer" onclick="openJob('${j.id}')">${j.emoji}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+          <div style="cursor:pointer" onclick="openJob('${j.id}')">
+            <div class="job-title">${escapeHtml(j.title)}</div>
+            <div class="job-company">${escapeHtml(j.company)}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button class="action-btn" onclick="shareDirect('${escapeHtml(j.title)} at ${escapeHtml(j.company)}', '${escapeHtml(j.url)}')" title="Share to WhatsApp">
+              <i data-lucide="share-2" class="icon-sm"></i>
+            </button>
+            <button class="action-btn ${savedJobIds.has(String(j.id)) ? 'active' : ''}" onclick="toggleSave('${j.id}', this)" title="Save job">
+              <i data-lucide="bookmark" class="icon-sm"></i>
+            </button>
+          </div>
+        </div>
+        <div class="job-meta" style="cursor:pointer" onclick="openJob('${j.id}')">
+          <span class="badge badge-gray"><i data-lucide="map-pin" class="icon-sm"></i> ${escapeHtml(j.province)}</span>
+          <span class="badge badge-gray">${escapeHtml(j.job_type)}</span>
+          ${j.remote ? '<span class="badge badge-blue">Remote</span>' : ''}
+          <span class="badge badge-orange" style="margin-left:auto">${escapeHtml(j.salary)}</span>
+        </div>
+      </div>
+    </div>
+  `).join('')
+  if (typeof lucide !== 'undefined') lucide.createIcons()
+}
+
+function openJob(id) {
+  const j = savedJobsMap.get(String(id)) || currentJobs.find(x => String(x.id) === String(id))
+  if (!j) return
+  const content = document.getElementById('job-modal-content')
+  content.innerHTML = `
+    <button class="modal-close" onclick="closeModal('job-modal')"><i data-lucide="x" class="icon-sm"></i></button>
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px">
+      <div class="job-logo" style="width:48px;height:48px;font-size:22px">${j.emoji}</div>
+      <div>
+        <h3 style="font-size:17px;font-weight:800">${escapeHtml(j.title)}</h3>
+        <div style="font-size:13px;color:var(--text-2)">${escapeHtml(j.company)}</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">
+      <span class="badge badge-gray"><i data-lucide="map-pin" class="icon-sm"></i> ${escapeHtml(j.province)}</span>
+      <span class="badge badge-gray">${escapeHtml(j.job_type)}</span>
+      <span class="badge badge-orange">${escapeHtml(j.salary)}</span>
+    </div>
+    <p style="font-size:13px;line-height:1.6;color:var(--text-1);margin-bottom:20px">${escapeHtml(j.description)}</p>
+    <div style="display:flex;gap:8px">
+      <a href="${escapeHtml(j.url)}" target="_blank" rel="noopener" class="btn btn-primary" style="flex:1">
+        Apply <i data-lucide="external-link" class="icon-sm"></i>
+      </a>
+      <button class="btn btn-ghost" onclick="shareDirect('${escapeHtml(j.title)} at ${escapeHtml(j.company)}', '${escapeHtml(j.url)}')">
+        <i data-lucide="share-2" class="icon"></i>
+      </button>
+    </div>
+  `
+  openModal('job-modal')
+  if (typeof lucide !== 'undefined') lucide.createIcons()
+}
+
+function toggleSave(id, btn) {
+  const sid = String(id)
+  const willSave = !savedJobIds.has(sid)
+  if (willSave) { 
+    savedJobIds.add(sid)
+    if (btn) btn.classList.add('active') 
+  } else { 
+    savedJobIds.delete(sid)
+    if (btn) btn.classList.remove('active') 
+  }
+  localStorage.setItem('vj_saved_jobs', JSON.stringify(Array.from(savedJobIds)))
+  showToast(willSave ? 'Job saved to device' : 'Job removed')
+}
+
+function setCat(btn, cat) { currentCat = cat; document.querySelectorAll('#page-jobs .cat-chip').forEach(b => b.classList.remove('active')); btn.classList.add('active'); fetchJobs(1, false) }
+function filterJobs() { fetchJobs(1, false) }
+function filterProvince(prov) { nav('jobs'); setTimeout(() => { const sel = document.getElementById('province-filter'); if (sel) { sel.value = prov; fetchJobs(1, false) } }, 50) }
+function doSearch() { const q = document.getElementById('hero-search').value; nav('jobs'); setTimeout(() => { const el = document.getElementById('job-search'); if (el) { el.value = q; fetchJobs(1, false) } }, 50) }
+
+// ── Courses Data Fetch ──
+let allCourses = []
+const FALLBACK_COURSES = [
+  { id: 'c1', title: 'National School of Government Online', provider: 'National School of Government', category: 'SA Government', description: 'Free accredited public service courses.', application_link: 'https://www.thensg.gov.za/', certificate: true }
+]
+
+async function fetchCourses() {
+  const grid = document.getElementById('courses-grid')
+  if (!grid) return
+  try {
+    const { data, error } = await sb.from('courses').select('*').eq('status', 'active').order('featured', { ascending: false }).order('title', { ascending: true })
+    if (error || !data || data.length === 0) throw new Error('Using fallback courses')
+    allCourses = data
+    document.getElementById('course-count-badge').textContent = `✓ ${allCourses.length} verified courses`
+    renderCourses()
+  } catch (err) {
+    allCourses = FALLBACK_COURSES
+    document.getElementById('course-count-badge').textContent = `✓ ${allCourses.length} courses`
+    renderCourses()
+  }
+}
+
+let currentCourseCategory = 'all'
+function renderCourses() {
+  const grid = document.getElementById('courses-grid')
+  if (!grid) return
+  const searchVal = (document.getElementById('course-search-input')?.value || '').toLowerCase()
+  let filtered = allCourses.filter(c => {
+    const matchCat = currentCourseCategory === 'all' || c.category === currentCourseCategory
+    const matchSearch = !searchVal || (c.title || '').toLowerCase().includes(searchVal) || (c.provider || '').toLowerCase().includes(searchVal)
+    return matchCat && matchSearch
+  })
+  if (!filtered.length) { grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-3);grid-column:1/-1">No courses found matching your criteria.</div>'; return }
+  grid.innerHTML = filtered.map(c => `
+    <div class="grid-item-card green-hover">
+      <div class="card-header-flex">
+        <div class="card-icon-box">📚</div>
+        <div style="flex:1">
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;flex-wrap:wrap">
+            <span class="badge badge-green">${escapeHtml(c.provider || 'Verified')}</span>
+            ${c.certificate ? '<span class="badge badge-blue">Certificate</span>' : ''}
+          </div>
+          <h3 style="font-size:15px;font-weight:700">${escapeHtml(c.title)}</h3>
+          <p style="font-size:12px;color:var(--text-2);margin-top:2px">${escapeHtml(c.description || '')}</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <a href="${escapeHtml(c.application_link || c.url || '#')}" target="_blank" rel="noopener" class="btn btn-green btn-sm" style="flex:1">
+          Apply Now <i data-lucide="external-link" class="icon-sm"></i>
+        </a>
+        <button class="action-btn" onclick="shareDirect('${escapeHtml(c.title)}', '${escapeHtml(c.application_link || c.url || '#')}')">
+          <i data-lucide="share-2" class="icon-sm"></i>
+        </button>
+      </div>
+    </div>
+  `).join('')
+  if (typeof lucide !== 'undefined') lucide.createIcons()
+}
+function setCourseFilter(btn, category) { currentCourseCategory = category; document.querySelectorAll('#page-courses .cat-chip').forEach(b => b.classList.remove('active')); btn.classList.add('active'); renderCourses() }
+function filterCourseCards(query) { renderCourses() }
+
+// ── Matric Resources Fetch ──
+async function fetchMatricResources() {
+  try {
+    const { data, error } = await sb.from('matric_resources').select('*');
+    if (error || !data) throw error;
+
+    const renderGrid = (category, containerId, defaultEmoji, badgeColor) => {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      const items = data.filter(item => item.category === category);
+      if (items.length === 0) { container.innerHTML = '<div style="color:var(--text-3);font-size:13px;grid-column:1/-1;">No resources found.</div>'; return; }
+
+      container.innerHTML = items.map(item => `
+        <div class="grid-item-card">
+          <div class="card-header-flex">
+            <div class="card-icon-box">${defaultEmoji}</div>
+            <div>
+              <span class="badge ${badgeColor}">${escapeHtml(item.category.toUpperCase())}</span>
+              <h3 style="font-size:15px;font-weight:700;margin-top:4px">${escapeHtml(item.title)}</h3>
+              <p style="font-size:12px;color:var(--text-2);margin-top:2px">${escapeHtml(item.description || '')}</p>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <a href="${escapeHtml(item.link)}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" style="flex:1">
+              View Details <i data-lucide="external-link" class="icon-sm"></i>
+            </a>
+            <button class="action-btn" onclick="shareDirect('${escapeHtml(item.title)}', '${escapeHtml(item.link)}')">
+              <i data-lucide="share-2" class="icon-sm"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    };
+
+    renderGrid('study abroad', 'grid-study-abroad', '🌍', 'badge-blue');
+    renderGrid('study material', 'grid-study-material', '📚', 'badge-green');
+    renderGrid('university', 'grid-university', '🏛️', 'badge-gray');
+    renderGrid('bursary', 'grid-bursary', '🎓', 'badge-orange');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  } catch (err) { console.error("Failed to load matric resources:", err); }
+}
+
+// ── CLOSING SOON TRACKER LOGIC ──
+let urgentItems = [];
+let urgentFilter = 'all';
+
+async function fetchClosingSoon() {
+  const listEl = document.getElementById('urgent-list');
+  if (!listEl) return;
+  listEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-3);">Checking live deadlines...</div>';
+
+  try {
+    const { data, error } = await sb
+      .from('jobs_with_alerts')
+      .select('*')
+      .eq('closing_soon', true)
+      .order('closing_date', { ascending: true });
+
+    if (error) throw error;
+    urgentItems = data || [];
+    renderUrgentItems();
+  } catch (err) {
+    console.error("Error fetching closing soon:", err);
+    urgentItems = []; 
+    renderUrgentItems();
+  }
+}
+
+function renderUrgentItems() {
+  const listEl = document.getElementById('urgent-list');
+  if (!listEl) return;
+
+  const filtered = urgentItems.filter(item => {
+    if (urgentFilter === 'all') return true;
+    return (item.type || '').toLowerCase() === urgentFilter;
+  });
+
+  if (filtered.length === 0) {
+    const typeLabel = urgentFilter !== 'all' ? urgentFilter : 'opportunities';
+    listEl.innerHTML = `
+      <div style="background:var(--bg-canvas);border-radius:12px;padding:24px;text-align:center;border:1px dashed var(--border);">
+        <p style="margin:0;color:var(--text-2);font-size:14px;">No ${typeLabel} closing in the next 48 hours. You are ahead of schedule!</p>
+      </div>`;
+    return;
+  }
+
+  const getHoursLeft = (dateString) => {
+    const diff = new Date(dateString) - new Date();
+    const hours = Math.max(0, Math.round(diff / (1000 * 60 * 60)));
+    return `${hours}h left`;
+  };
+
+  const borderColors = { learnership: '#F97316', bursary: '#10B981', internship: '#3B82F6' };
+
+  listEl.innerHTML = filtered.map(item => {
+    const itemType = (item.type || 'Opportunity').toLowerCase();
+    const borderColor = borderColors[itemType] || '#F97316';
+    return `
+      <div class="card" style="border-left:5px solid ${borderColor};display:flex;align-items:center;justify-content:space-between;padding:16px;">
+        <div style="flex:1;min-width:0;padding-right:12px;">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;color:${borderColor};margin-bottom:4px;">
+            ${item.type || 'Opportunity'}
+          </div>
+          <h4 style="margin:0 0 4px 0;font-size:15px;font-weight:600;color:var(--text-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(item.title)}</h4>
+          <p style="margin:0;font-size:13px;color:var(--text-2);">
+            Deadline: ${new Date(item.closing_date).toLocaleDateString()}
+          </p>
+        </div>
+        <div style="background:rgba(220, 38, 38, 0.1);color:#DC2626;font-weight:700;font-size:13px;padding:6px 12px;border-radius:8px;border:1px solid rgba(220, 38, 38, 0.3);white-space:nowrap;">
+          ${getHoursLeft(item.closing_date)}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function setUrgentFilter(btn, type) {
+  urgentFilter = type;
+  const chips = btn.parentElement.querySelectorAll('.cat-chip');
+  chips.forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  renderUrgentItems();
+}
+
+function sendUrgentWhatsAppReminder() {
+  if (urgentItems.length === 0) {
+    showToast("No urgent deadlines to send!");
+    return;
+  }
+
+  const getHoursLeft = (dateString) => {
+    const diff = new Date(dateString) - new Date();
+    const hours = Math.max(0, Math.round(diff / (1000 * 60 * 60)));
+    return `${hours}h left`;
+  };
+
+  let msg = `🚨 *URGENT DEADLINES (Next 48 Hours)* 🚨\n\n`;
+  urgentItems.forEach((item, idx) => {
+    const typeBadge = item.type ? `[${item.type.toUpperCase()}]` : '';
+    msg += `${idx + 1}. *${item.title}* ${typeBadge}\n`;
+    msg += `⏳ Closes in: ${getHoursLeft(item.closing_date)}\n`;
+    msg += `🔗 Apply: ${item.url || 'https://vibejobz.co.za'}\n\n`;
+  });
+  msg += `👉 Check more opportunities on VibeJobz!`;
+
+  window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+  showToast("Opening WhatsApp...");
+}
+
+// ── ADVANCED APS CALCULATOR LOGIC ──
+const APS_NAMES = { HL:"Home Language", FAL:"First Additional Language", LO:"Life Orientation", MATH:"Mathematics", MLIT:"Mathematical Literacy", TMATH:"Technical Mathematics", PS:"Physical Sciences", LS:"Life Sciences", TSCI:"Technical Sciences", ACC:"Accounting", BUS:"Business Studies", ECO:"Economics", GEO:"Geography", HIS:"History", CAT:"Computer Applications Technology", IT:"Information Technology", AGS:"Agricultural Sciences", TOU:"Tourism", CON:"Consumer Studies", HOS:"Hospitality Studies", REL:"Religion Studies", VA:"Visual Arts", DA:"Dramatic Arts", MUS:"Music", DAN:"Dance Studies", DES:"Design", EGD:"Engineering Graphics and Design", CIV:"Civil Technology", ELE:"Electrical Technology", MEC:"Mechanical Technology", SAL:"Second Additional Language" };
+const APS_NON_ELECTIVE = ["HL","FAL","LO","MATH","MLIT","TMATH"];
+const APS_TECH_ONLY = ["TSCI","CIV","ELE","MEC"];
+const APS_ELECT = Object.keys(APS_NAMES).filter(k=>!APS_NON_ELECTIVE.includes(k));
+const apsElectivesFor = s => APS_ELECT.filter(k => s==="technical" || !APS_TECH_ONLY.includes(k));
+const APS_LEVELS = [[80,7],[70,6],[60,5],[50,4],[40,3],[30,2],[0,1]];
+const getApsPts = m => { for(const [t,p] of APS_LEVELS) if(m>=t) return p; return 1 };
+
+const APS_METHODS = {
+  six: {name:"Six subjects, LO excluded", need:6, useLO:false, adj:0},
+  seven: {name:"All seven subjects, LO included", need:7, useLO:true, adj:4},
+  best6: {name:"Best six of seven subjects", need:6, useLO:true, best:6, adj:1},
+  mlhalf: {name:"Six subjects, Maths Lit at half points", need:6, useLO:false, adj:0}
+};
+
+const M_OR_T=["MATH","TMATH"], SCI=["PS","TSCI"];
+const APS_PROGRAMMES = [
+ {name:"BSc Engineering", type:"Degree", min:34, reqs:[{label:"Mathematics", options:[{ids:["MATH"],min:60}]}, {label:"Science", options:[{ids:["PS"],min:60}]}]},
+ {name:"BSc Natural Sciences", type:"Degree", min:30, reqs:[{label:"Mathematics", options:[{ids:["MATH"],min:50}]}, {label:"Science", options:[{ids:["PS","LS"],min:50}]}]},
+ {name:"BCom Accounting", type:"Degree", min:32, reqs:[{label:"Mathematics", options:[{ids:["MATH"],min:60}]}]},
+ {name:"BCom Business Management", type:"Degree", min:28, reqs:[{label:"Mathematics", options:[{ids:["MATH"],min:50}]}]},
+ {name:"LLB", type:"Degree", min:34, reqs:[{label:"Language", options:[{ids:["HL","FAL"],min:60}]}]},
+ {name:"BA Humanities", type:"Degree", min:26, reqs:[{label:"Language", options:[{ids:["HL","FAL"],min:50}]}]},
+ {name:"BEd Foundation Phase", type:"Degree", min:26, reqs:[{label:"Language", options:[{ids:["HL","FAL"],min:50}]}]},
+ {name:"Diploma in Engineering", type:"Diploma", min:24, reqs:[{label:"Mathematics", options:[{ids:M_OR_T,min:50}]}, {label:"Science", options:[{ids:SCI,min:50}]}]},
+ {name:"Diploma in Information Technology", type:"Diploma", min:24, reqs:[{label:"Mathematics", options:[{ids:M_OR_T,min:50},{ids:["MLIT"],min:60}]}]},
+ {name:"Diploma in Business Management", type:"Diploma", min:22, reqs:[{label:"Mathematics", options:[{ids:M_OR_T,min:40},{ids:["MLIT"],min:50}]}]},
+ {name:"Higher Certificate in Business", type:"Higher Certificate", min:16, reqs:[{label:"Language", options:[{ids:["HL","FAL"],min:40}]}]}
+];
+
+const APS_SLOTS = ["HL","FAL","MAT","LO","E1","E2","E3"];
+const APS_LABELS = {HL:"Home language", FAL:"First additional language", MAT:"Mathematics", LO:"Life Orientation", E1:"Elective subject 1", E2:"Elective subject 2", E3:"Elective subject 3"};
+const APS_MARKTYPES = {g11:"Grade 11 final marks", g12p:"Grade 12 preliminary marks", g12f:"Grade 12 final marks"};
+
+// SAFE LOCAL STORAGE INIT FOR CALCULATOR
+let apsState;
+try {
+  const savedState = localStorage.getItem('aps_calc_v1');
+  apsState = savedState ? JSON.parse(savedState) : null;
+  // If it's missing the 'marks' object (old version conflict), force a reset
+  if (!apsState || !apsState.marks || !apsState.subj) {
+    throw new Error("Old or invalid state");
+  }
+} catch(e) {
+  apsState = { stream:"academic", markType:"g12f", math:"MATH", method:"six", marks:{HL:"",FAL:"",MAT:"",LO:"",E1:"",E2:"",E3:""}, subj:{E1:"",E2:"",E3:""}, wiSlot:"MAT", delta:0, filter:"all" };
+}
+
+const apsSave = () => localStorage.setItem('aps_calc_v1', JSON.stringify(apsState));
+
+// Helper function to safely query DOM
+const $$ = s => document.querySelector(s);
+
+function apsSubjectName(slot){
+  if(slot==="HL") return APS_NAMES.HL; if(slot==="FAL") return APS_NAMES.FAL; if(slot==="LO") return APS_NAMES.LO;
+  if(slot==="MAT") return APS_NAMES[apsState.math];
+  return apsState.subj[slot] ? APS_NAMES[apsState.subj[slot]] : APS_LABELS[slot];
+}
+
+function apsBuildInputs(){
+  if(!document.querySelector("#calc-inputs")) return;
+  
+  const mathOpts = ["MATH","MLIT"].concat(apsState.stream==="technical" ? ["TMATH"] : []);
+  if(!mathOpts.includes(apsState.math)) apsState.math="MATH";
+  
+  const html = APS_SLOTS.map(slot => {
+    let left;
+    if(slot==="MAT"){
+      left = `<select id="n-${slot}" data-slot="${slot}" class="input calc-subj" style="padding:10px;">${mathOpts.map(k=>`<option value="${k}"${apsState.math===k?" selected":""}>${APS_NAMES[k]}</option>`).join("")}</select>`;
+    } else if(slot[0]==="E"){
+      left = `<select id="n-${slot}" data-slot="${slot}" class="input calc-subj" style="padding:10px;"></select>`;
+    } else {
+      left = `<div class="calc-fixed">${APS_NAMES[slot]}</div>`;
+    }
+    const forId = (slot==="MAT" || slot[0]==="E") ? `n-${slot}` : `m-${slot}`;
+    const note = slot==="LO" ? `<div class="calc-hint">Some programmes ignore this.</div>` : "";
+    return `<div class="calc-row"><label class="calc-lbl" for="${forId}">${APS_LABELS[slot]}</label>
+      <div class="calc-pair">${left}<input id="m-${slot}" class="input calc-mark" data-slot="${slot}" type="number" inputmode="numeric" min="0" max="100" placeholder="%" value="${apsState.marks[slot]}"></div>
+      <small class="calc-err" id="e-${slot}" hidden>Enter a whole mark from 0 to 100.</small>${note}</div>`;
+  }).join("");
+  $$("#calc-inputs").innerHTML = html;   apsRefreshElectives(); }  function apsRefreshElectives(){   const list = apsElectivesFor(apsState.stream);   ["E1","E2","E3"].forEach(slot => {     if(apsState.subj[slot] && !list.includes(apsState.subj[slot])) apsState.subj[slot]="";     const el = $$
+("#n-"+slot); if(!el) return;
+    const taken = ["E1","E2","E3"].filter(s=>s!==slot).map(s=>apsState.subj[s]);
+    el.innerHTML = `<option value="">Choose subject</option>` + list.map(k=>
+      `<option value="${k}"${apsState.subj[slot]===k?" selected":""}${taken.includes(k)?" disabled":""}>${APS_NAMES[k]}${taken.includes(k)?" (already chosen)":""}</option>`).join("");
+  });
+}
+
+function apsReadMark(slot){
+  const v = apsState.marks[slot];
+  if(v==="" || v===null) return null;
+  const n = Number(v);
+  if(!Number.isFinite(n) || n<0 || n>100) return null;
+  return Math.round(n);
+}
+
+function apsBuildEntries(deltaSlot, delta){
+  return APS_SLOTS.map(slot => {
+    let subj = slot==="MAT" ? apsState.math : (slot[0]==="E" ? apsState.subj[slot] : slot);
+    let mark = apsReadMark(slot);
+    if(slot[0]==="E" && !subj) mark = null;
+    if(mark!==null && slot===deltaSlot) mark = Math.max(0, Math.min(100, mark+delta));
+    return {slot, subj, mark, isLO: slot==="LO", name: subj ? APS_NAMES[subj] : APS_LABELS[slot]};
+  });
+}
+
+function apsComputeMethod(entries, key){
+  const M = APS_METHODS[key];
+  let cand = entries.filter(e => e.mark!==null && (M.useLO || !e.isLO)).map(e => ({...e, base: getApsPts(e.mark), p: getApsPts(e.mark)*(key==="mlhalf"&&e.subj==="MLIT"?0.5:1)}));
+  let chosen = cand;
+  if(M.best) chosen = [...cand].sort((a,b) => b.p - a.p).slice(0, M.best);
+  const total = chosen.reduce((s,e) => s+e.p, 0);
+  return {total, chosen: new Set(chosen.map(e=>e.slot)), complete: chosen.length>=M.need, cand, need:M.need};
+}
+
+function apsFmt(n){ return Number.isInteger(n) ? String(n) : n.toFixed(1) }
+
+function apsEvalProgramme(p, entries, key, res){
+  const min = p.min + APS_METHODS[key].adj;
+  const issues = []; let worst = 0;
+  p.reqs.forEach(r => {
+    let met = false, best = null;
+    for(const o of r.options){
+      const c = entries.filter(e => o.ids.includes(e.subj) && e.mark!==null);
+      if(!c.length) continue;
+      const top = Math.max(...c.map(e=>e.mark));
+      const sf = Math.max(0, o.min-top);
+      if(sf===0){ met = true; break; }
+      if(!best || sf<best.sf) best = {sf, top, o, name: APS_NAMES[c.find(e=>e.mark===top).subj]};
+    }
+    if(met) return;
+    if(best){ issues.push(`${best.name}: you have ${best.top}%, needs ${best.o.min}%`); worst = Math.max(worst, best.sf); }
+    else{ issues.push(`${r.label}: specific subject needed.`); worst = Infinity; }
+  });
+  const apsShort = Math.max(0, min-res.total);
+  if(apsShort>0) issues.unshift(`APS: you have ${apsFmt(res.total)}, needs ${min}`);
+  let status = "no";
+  if(!issues.length) status = "yes"; else if(apsShort<=3 && worst<=5) status = "close";
+  return {status, issues, min};
+}
+
+function apsRenderPips(p, dim){
+  let s = `<span class="calc-pips${dim?" dim":""}" aria-hidden="true">`;
+  for(let i=1; i<=7; i++) s += `<i class="${i<=Math.ceil(p) && p>0 ? "on" : ""}"></i>`;
+  return s + "</span>";
+}
+
+function apsUpdateAndRender() {
+  apsSave();
+  if(!document.querySelector("#calc-notice")) return;
+  
+  const entries = apsBuildEntries(null, 0);
+  const key = apsState.method;
+  const res = apsComputeMethod(entries, key);
+  const M = APS_METHODS[key];
+
+  const entered = entries.filter(e => e.mark!==null).length;
+  let notice = `<div style="padding:10px; background:var(--bg-canvas); border-radius:8px; margin-bottom:12px; font-size:13px; color:var(--text-2);">Disclaimer: Thresholds are illustrative. Check specific institution rules.</div>`;
+  if(entered===0) notice += `<div style="padding:10px; background:rgba(255,107,0,0.1); color:var(--accent); border-radius:8px; margin-bottom:12px; font-size:13px; font-weight:600;">Enter your marks to see your score.</div>`;
+  else if(!res.complete) notice += `<div style="padding:10px; background:rgba(255,107,0,0.1); color:var(--accent); border-radius:8px; margin-bottom:12px; font-size:13px; font-weight:600;">Some marks are missing, score is partial.</div>`;
+  
+  $$("#calc-notice").innerHTML = notice;
+  $$("#calc-total").textContent = apsFmt(res.total);   $$
+("#calc-of").textContent = `of ${M.need*7} points`;
+  $$("#calc-mark-note").textContent = `Based on your ${APS_MARKTYPES[apsState.markType].toLowerCase()}.`;
+
+  const withAll = entries.filter(e=>e.mark!==null);
+  $$("#calc-subjects").innerHTML = withAll.length ? withAll.map(e => {
+    const counted = res.chosen.has(e.slot);
+    const c = res.cand.find(x=>x.slot===e.slot);
+    const p = c ? c.p : getApsPts(e.mark);
+    let sub = counted ? "Counted" : (e.isLO&&!M.useLO ? "Not counted with this method" : "Not counted");
+    return `<div class="calc-subjrow"><div class="nm">${e.name}<small>${e.mark}% · ${sub}</small></div>${apsRenderPips(getApsPts(e.mark),!counted)}<div class="calc-pts">${counted?apsFmt(p):"–"}</div></div>`;
+  }).join("") : `<p class="calc-hint">No marks entered yet.</p>`;
+
+  $$("#calc-methods").innerHTML = Object.keys(APS_METHODS).map(k => {
+    const r = apsComputeMethod(entries, k);
+    return `<tr class="${k===key?"sel":""}"><td>${APS_METHODS[k].name}</td><td>${apsFmt(r.total)}${r.complete?"":"*"}</td></tr>`;
+  }).join("");
+
+  apsRenderWhatIf(entries, res);
+  apsRenderProgrammes(entries, res);
+}
+
+function apsRenderWhatIf(entries, res){
+  const opts = APS_SLOTS.map(s => [s, apsSubjectName(s)]);
+  const sig = opts.map(o=>o.join(":")).join("|");
+  const sel = $$("#wiSlot");
+  if(sel.dataset.sig !== sig){
+    sel.innerHTML = opts.map(([s,n]) => `<option value="${s}"${apsState.wiSlot===s?" selected":""}>${n}</option>`).join("");
+    sel.dataset.sig = sig;
+  }
+  const d = apsState.delta;
+  $$("#wiVal").textContent = (d>0?"+":"")+d+"\%";   const out = $$
+("#wiOut");
+  const base = entries.find(e => e.slot===apsState.wiSlot);
+  if(!base || base.mark===null){ out.textContent = "Enter a mark for this subject first."; return; }
+  if(d===0){ out.textContent = "Move the slider to see the effect."; return; }
+  
+  const e2 = apsBuildEntries(apsState.wiSlot, d);
+  const r2 = apsComputeMethod(e2, apsState.method);
+  const newMark = e2.find(e => e.slot===apsState.wiSlot).mark;
+  const diff = r2.total - res.total;
+  out.innerHTML = `<strong>${base.name}</strong> ${base.mark}% → ${newMark}%. <br>APS changes from ${apsFmt(res.total)} to <strong>${apsFmt(r2.total)}</strong> (${diff>=0?"+":""}${apsFmt(diff)}).`;
+}
+
+function apsRenderProgrammes(entries, res){
+  const key = apsState.method;
+  let rows = APS_PROGRAMMES.filter(p => apsState.filter==="all" || p.type===apsState.filter).map(p => ({p, r: apsEvalProgramme(p, entries, key, res)}));
+  const order = {yes:0, close:1, no:2};
+  rows.sort((a,b) => order[a.r.status] - order[b.r.status]);
+  const anyMarks = entries.some(e=>e.mark!==null);
+  const statusBadges = {yes: "badge-green", close: "badge-orange", no: "badge-gray"};
+  const statusLabels = {yes: "Qualifies", close: "Almost There", no: "Not Yet"};
+
+  $$("#calc-programmes").innerHTML = !anyMarks ? `<p class="calc-hint">Enter your marks to check which programmes you qualify for.</p>` : rows.map(({p,r}) =>
+    `<div class="calc-prog ${r.status}"><div class="hd"><h3>${p.name}</h3><span class="badge ${statusBadges[r.status]}">${statusLabels[r.status]}</span></div>
+     <div class="calc-meta">${p.type} · Minimum APS: ${r.min}</div>
+     ${r.issues.length ? `<ul>${r.issues.map(i=>`<li>${i}</li>`).join("")}</ul>` : `<div class="calc-hint" style="color:var(--green); font-weight:700; margin-top:8px;">✓ You meet the APS and subject requirements.</div>`}</div>`).join("");
+}
+</script>
+</body>
+</html>
