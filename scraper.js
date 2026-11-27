@@ -1,6 +1,12 @@
+require('dotenv').config();
 const axios = require('axios');
 const cheerio = require('cheerio');
 const { createClient } = require('@supabase/supabase-js');
+
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
+  console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_KEY in environment variables.');
+  process.exit(1);
+}
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
@@ -35,48 +41,61 @@ async function scrapeOpportunities() {
       console.log(`Scraping ${target.type}s from ${target.url}...`);
       const { data } = await axios.get(target.url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.9'
+        },
+        timeout: 15000
       });
 
       const $ = cheerio.load(data);
 
       $('div, article, li').each((index, element) => {
-        const textContent = $(element).text() || '';
+        const el = $(element);
+        const textContent = el.text() || '';
 
-        // Match individual listing cards that contain both Posted and Closes dates
-        if (textContent.includes('Posted:') && textContent.includes('Closes:') && textContent.length < 1500) {
-          const linkEl = $(element).find('a').first();
-          const titleEl = $(element).find('h2, h3, h4, strong, a').first();
-          const title = titleEl.text().trim();
+        if (!textContent.includes('Posted:') || !textContent.includes('Closes:') || textContent.length > 1200) {
+          return;
+        }
 
-          let url = linkEl.attr('href');
-          if (!title || !url || url === '#') return;
+        // Skip outer wrapper elements that contain smaller child cards with their own dates
+        const hasChildCard = el.find('div, article, li').toArray().some((child) => {
+          const childText = $(child).text() || '';
+          return childText.includes('Posted:') && childText.includes('Closes:');
+        });
+        if (hasChildCard) return;
 
-          if (url.startsWith('/')) {
-            url = 'https://www.graduates24.com' + url;
-          }
+        // Target job detail links specifically (avoid navigation/category links)
+        const linkEl = el.find('a[href*="/learnership"], a[href*="/internship"], a[href*="/job"], h2 a, h3 a, h4 a').first();
+        const fallbackLink = linkEl.length ? linkEl : el.find('a').first();
+        let url = fallbackLink.attr('href');
 
-          const dateMatch = textContent.match(/Closes:\s*(\d{1,2}\s+[a-zA-Z]{3,9}\s+\d{4})/i);
-          if (!dateMatch) return;
+        const titleEl = el.find('h2, h3, h4, strong').first();
+        const title = (titleEl.text() || fallbackLink.text()).trim();
 
-          const parsedDate = new Date(`${dateMatch[1]} 23:59:59`);
-          if (isNaN(parsedDate.getTime())) return;
+        if (!title || !url || url === '#' || url.endsWith('/learnerships') || url.endsWith('/internships')) {
+          return;
+        }
 
-          // Skip if already expired
-          if (parsedDate < now) return;
+        if (url.startsWith('/')) {
+          url = 'https://www.graduates24.com' + url;
+        }
 
-          // Deduplicate by URL before upserting
-          if (!uniqueJobsMap.has(url)) {
-            uniqueJobsMap.set(url, {
-              title: title,
-              url: url,
-              type: target.type,
-              job_type: target.type,
-              closing_date: parsedDate.toISOString(),
-              source: 'graduates24'
-            });
-          }
+        const dateMatch = textContent.match(/Closes:\s*(\d{1,2}\s+[a-zA-Z]{3,9}\s+\d{4})/i);
+        if (!dateMatch) return;
+
+        const parsedDate = new Date(`${dateMatch[1]} 23:59:59`);
+        if (isNaN(parsedDate.getTime()) || parsedDate < now) return;
+
+        if (!uniqueJobsMap.has(url)) {
+          uniqueJobsMap.set(url, {
+            title,
+            url,
+            type: target.type,
+            job_type: target.type,
+            closing_date: parsedDate.toISOString(),
+            source: 'graduates24'
+          });
         }
       });
     }
@@ -85,19 +104,19 @@ async function scrapeOpportunities() {
 
     // 3. Push fresh, active listings to Supabase
     if (jobsToInsert.length > 0) {
-      console.log(`Found ${jobsToInsert.length} active opportunities. Pushing to Supabase...`);
-      const { error } = await supabase
+      console.log(`Found ${jobsToInsert.length} active opportunities. Sample:`, jobsToInsert[0]);
+      const { data: upsertedData, error } = await supabase
         .from('jobs')
-        .upsert(jobsToInsert, { onConflict: 'url', ignoreDuplicates: true });
+        .upsert(jobsToInsert, { onConflict: 'url' })
+        .select();
 
       if (error) throw error;
-      console.log('Successfully synced active learnerships and internships.');
+      console.log(`Successfully synced ${upsertedData?.length ?? jobsToInsert.length} rows to Supabase.`);
     } else {
-      console.log('No new active opportunities found.');
+      console.log('No active opportunities matched the parser. Check if Graduates24 changed its HTML or blocked the request.');
     }
-
   } catch (error) {
-    console.error('Scraper failed:', error.message);
+    console.error('Scraper failed:', error.response ? `HTTP ${error.response.status} - ${error.message}` : error.message);
     process.exit(1);
   }
 }
